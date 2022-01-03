@@ -1,21 +1,24 @@
 package io.collabanator;
 
+import java.util.List;
+
 public class Message {
     private String name;
     private double date;
     private int id;
     private String type;
     private String text;
+    private List<String> users;
 
-    public Message() {
+    public List<String> getUsers() {
+        return this.users;
     }
 
-    public Message(String name, double date, int id, String type, String text) {
-        this.name = name;
-        this.date = date;
-        this.id = id;
-        this.type = type;
-        this.text = text;
+    public void setUsers(List<String> users) {
+        this.users = users;
+    }
+
+    public Message() {
     }
 
     public String getName() {

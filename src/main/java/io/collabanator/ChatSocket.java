@@ -2,6 +2,7 @@ package io.collabanator;
 
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.stream.Collectors;
 
 import javax.enterprise.context.ApplicationScoped;
 import javax.websocket.OnClose;
@@ -24,6 +25,15 @@ public class ChatSocket {
     @OnOpen
     public void onOpen(Session session, @PathParam("username") String username) {
         sessions.put(username, session);
+        Message message = new Message();
+        message.setType("userlist");
+        message.setUsers(sessions.keySet().stream().collect(Collectors.toList()));
+        try {
+            broadcast(new ObjectMapper().writeValueAsString(message));
+        } catch (JsonProcessingException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        }
     }
 
     @OnClose
