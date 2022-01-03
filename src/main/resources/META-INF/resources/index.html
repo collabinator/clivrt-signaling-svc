@@ -1,177 +1,53 @@
-<!DOCTYPE html>
-<html lang="en">
+<html>
+<!--
+    WebSocket chat client
+
+    WebSocket and WebRTC based multi-user chat sample with two-way video
+    calling, including use of TURN if applicable or necessary.
+
+    This file provides the structure of the chat client's web page, including
+    logging in, text chatting, and making private video calls to other users.
+
+    To read about how this sample works:  http://bit.ly/webrtc-from-chat
+
+    Any copyright is dedicated to the Public Domain.
+    http:   creativecommons.org/publicdomain/zero/1.0/
+-->
 <head>
-    <meta charset="UTF-8">
-    <title>signalling - 1.0.0-SNAPSHOT</title>
-    <style>
-        h1, h2, h3, h4, h5, h6 {
-            margin-bottom: 0.5rem;
-            font-weight: 400;
-            line-height: 1.5;
-        }
-
-        h1 {
-            font-size: 2.5rem;
-        }
-
-        h2 {
-            font-size: 2rem
-        }
-
-        h3 {
-            font-size: 1.75rem
-
-        }
-
-        h4 {
-            font-size: 1.5rem
-        }
-
-        h5 {
-            font-size: 1.25rem
-        }
-
-        h6 {
-            font-size: 1rem
-        }
-
-        .lead {
-            font-weight: 300;
-            font-size: 2rem;
-        }
-
-        .banner {
-            font-size: 2.7rem;
-            margin: 0;
-            padding: 2rem 1rem;
-            background-color: #0d1c2c;
-            color: white;
-        }
-
-        body {
-            margin: 0;
-            font-family: -apple-system, system-ui, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
-        }
-
-        code {
-            font-family: SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
-            font-size: 87.5%;
-            color: #e83e8c;
-            word-break: break-word;
-        }
-
-        .left-column {
-            padding: .75rem;
-            max-width: 75%;
-            min-width: 55%;
-        }
-
-        .right-column {
-            padding: .75rem;
-            max-width: 25%;
-        }
-
-        .container {
-            display: flex;
-            width: 100%;
-        }
-
-        li {
-            margin: 0.75rem;
-        }
-
-        .right-section {
-            margin-left: 1rem;
-            padding-left: 0.5rem;
-        }
-
-        .right-section h3 {
-            padding-top: 0;
-            font-weight: 200;
-        }
-
-        .right-section ul {
-            border-left: 0.3rem solid #71aeef;
-            list-style-type: none;
-            padding-left: 0;
-        }
-
-        .provided-code {
-            border-left: 0.3rem solid #71aeef;
-            padding-left: 10px;
-        }
-
-        .provided-code h3 {
-            font-weight: 200;
-        }
-    </style>
+  <title>WebSocket Chat Demo with WebRTC Calling</title>
+  <meta charset="utf-8">
+  <link href="./chat.css" rel="stylesheet">
+  <link href="./shared.css" rel="stylesheet">
+  <script type="text/javascript" src="./chatclient.js"></script>
+  <script src="./adapter.js"></script>
 </head>
 <body>
-
-<div class="banner lead">
-    Your new Cloud-Native application is ready!
-</div>
-
-<div class="container">
-    <div class="left-column">
-        <p class="lead"> Congratulations, you have created a new Quarkus cloud application.</p>
-
-        <h2>What is this page?</h2>
-
-        <p>This page is served by Quarkus. The source is in
-            <code>src/main/resources/META-INF/resources/index.html</code>.</p>
-
-        <h2>What are your next steps?</h2>
-
-        <p>If not already done, run the application in <em>dev mode</em> using: <code>./mvnw compile quarkus:dev</code>.
-        </p>
-        <ul>
-            <li>Your static assets are located in <code>src/main/resources/META-INF/resources</code>.</li>
-            <li>Configure your application in <code>src/main/resources/application.properties</code>.</li>
-            <li>Quarkus now ships with a <a href="/q/dev/">Dev UI</a> (available in dev mode only)</li>
-            <li>Play with the provided code located in <code>src/main/java</code>:</li>
-        </ul>
-                <div class="provided-code">
-            <h3>WebSockets</h3>
-            <p>WebSocket communication channel starter code</p>
-            
-            <p><a href="https://quarkus.io/guides/websockets" class="guide-link" target="_blank">Related guide section...</a></p>
-        </div>
-
+  <div class="container">
+    <div class="infobox">
+      <p>This is a simple chat system implemented using WebSockets. It works by sending packets of JSON back and forth with the server.
+        <a href="https://github.com/mdn/samples-server/tree/master/s/webrtc-from-chat">
+      Check out the source</a> on Github.</p>
+      <p class="mdn-disclaimer">This text and audio/video chat example is offered as-is for demonstration purposes only, and should not be used for any other purpose.
+      </p>
+      <p>Click a username in the user list to ask them to enter a one-on-one video chat with you.</p>
+      <p>Enter a username: <input id="name" type="text" maxlength="12" required autocomplete="username" inputmode="verbatim" placeholder="Username">
+        <input type="button" name="login" value="Log in" onclick="connect()"></p>
     </div>
-    <div class="right-column">
-        <div class="right-section">
-            <h3>Application</h3>
-            <ul>
-                <li>GroupId: <code>io.collabanator</code></li>
-                <li>ArtifactId: <code>signalling</code></li>
-                <li>Version: <code>1.0.0-SNAPSHOT</code></li>
-                <li>Quarkus Version: <code>2.5.4.Final</code></li>
-            </ul>
-        </div>
-        <div class="right-section">
-            <h3>Do you like Quarkus?</h3>
-            <ul>
-                <li>Go give it a star on <a href="https://github.com/quarkusio/quarkus">GitHub</a>.</li>
-            </ul>
-        </div>
-        <div class="right-section">
-            <h3>Selected extensions guides</h3>
-            <ul>
-                <li title="WebSocket communication channel support"><a href="https://quarkus.io/guides/websockets" target="_blank">WebSockets guide</a></li>
-                <li title="Monitor service health"><a href="https://quarkus.io/guides/microprofile-health" target="_blank">SmallRye Health guide</a></li>
-            </ul>
-        </div>
-        <div class="right-section">
-            <h3>More reading</h3>
-            <ul>
-                <li><a href="https://quarkus.io/guides/maven-tooling" target="_blank">Setup your IDE</a></li>
-                <li><a href="https://quarkus.io/guides/getting-started" target="_blank">Getting started</a></li>
-                <li><a href="https://quarkus.io/guides/" target="_blank">All guides</a></li>
-                <li><a href="https://quarkus.io" target="_blank">Quarkus Web Site</a></li>
-            </ul>
-        </div>
+    <ul class="userlistbox"></ul>
+    <div class="chatbox"></div>
+    <div class="camerabox">
+      <video id="received_video" autoplay></video>
+      <video id="local_video" autoplay muted></video>
+      <button id="hangup-button" onclick="hangUpCall();" role="button" disabled>
+        Hang Up
+      </button>
     </div>
-</div>
+    <div class="empty-container"></div>
+    <div class="chat-controls">
+      Chat:<br/>
+      <input id="text" type="text" name="text" size="100" maxlength="256" placeholder="Say something meaningful..." autocomplete="off" onkeyup="handleKey(event)" disabled>
+      <input type="button" id="send" name="send" value="Send" onclick="handleSendButton()" disabled>
+    </div>
+  </div>
 </body>
 </html>
