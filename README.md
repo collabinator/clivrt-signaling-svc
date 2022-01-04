@@ -1,69 +1,40 @@
 # clivrt Signaling Service
-Backend service that provides WebRTC signaling for connecting clients together
+Backend service that provides WebRTC signaling for connecting clients together. This service offers:
+* User registration and management
+* A basic chat feature whereby a user can send a message to all other connected users
+* Generic message handling for signaling and ICE negotiation to support a WebRTC session between two users
 
-## Developers
-This project uses Quarkus, the Supersonic Subatomic Java Framework.
-
-If you want to learn more about Quarkus, please visit its website: https://quarkus.io/ .
-
+## Getting started
 ### Running the application in dev mode
 
 You can run your application in dev mode that enables live coding using:
 ```shell script
-./mvnw compile quarkus:dev
-```
+./mvnw quarkus:dev
+``` 
 
-> **_NOTE:_**  Quarkus now ships with a Dev UI, which is available in dev mode only at http://localhost:8080/q/dev/.
+#### Connecting using the GUI
+Once the app is running, open http://localhost:8080 in your browser. Enter your desired username where indicated, and send a message to the socket using the Chat box at the bottom of the page.
 
-### Packaging and running the application
-
-The application can be packaged using:
+#### Connecting using a Terminal
+You can also just connect directly to the socket from the terminal using a websocket client, like `wscat`:
 ```shell script
-./mvnw package
+# Assuming you have npm installed, install the wscat package
+npm install wscat
+
+# Then open a connection to the server (ws://localhost:8080/chat/${username})like this: 
+wscat -c ws://localhost:8080/chat/andy
 ```
-It produces the `quarkus-run.jar` file in the `target/quarkus-app/` directory.
-Be aware that it’s not an _über-jar_ as the dependencies are copied into the `target/quarkus-app/lib/` directory.
 
-The application is now runnable using `java -jar target/quarkus-app/quarkus-run.jar`.
-
-If you want to build an _über-jar_, execute the following command:
+Once you're connected, send a message to chat using JSON, like this:
 ```shell script
-./mvnw package -Dquarkus.package.type=uber-jar
+{"type":"message", "text":"This is a test message"}
 ```
 
-The application, packaged as an _über-jar_, is now runnable using `java -jar target/*-runner.jar`.
-
-### Creating a native executable
-
-You can create a native executable using: 
-```shell script
-./mvnw package -Pnative
-```
-
-Or, if you don't have GraalVM installed, you can run the native executable build in a container using: 
-```shell script
-./mvnw package -Pnative -Dquarkus.native.container-build=true
-```
-
-You can then execute your native executable with: `./target/signalling-1.0.0-SNAPSHOT-runner`
-
-If you want to learn more about building native executables, please consult https://quarkus.io/guides/maven-tooling.
-
-### Related Guides
-
-- WebSockets ([guide](https://quarkus.io/guides/websockets)): WebSocket communication channel support
-- SmallRye Health ([guide](https://quarkus.io/guides/microprofile-health)): Monitor service health
-
-### Provided Code
-
-#### SmallRye Health
-
-Monitor your application's health using SmallRye Health
-
-[Related guide section...](https://quarkus.io/guides/smallrye-health)
-
-#### WebSockets
-
-WebSocket communication channel starter code
-
-[Related guide section...](https://quarkus.io/guides/websockets)
+## Message Schema
+The server expects most messages to take the form of a JSON object, giving particular regard to the following attributes:
+* **type**: the message type. Supported values:
+    * *message*: this indicates a text message to convey to one person or to everyone
+    * *userlist*: this indcates that the list of users has updated in some way
+* **text**: the text to send to the desired recipient(s), only applicable for **type: message**
+* **users**: a list of usernames, only applicable for **type: userlist**
+* **target**: the desired recipient of this message. If omitted, the message will be transmitted to all users currently connected to the socket.

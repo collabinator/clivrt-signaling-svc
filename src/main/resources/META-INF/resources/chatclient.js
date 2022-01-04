@@ -65,7 +65,7 @@ var webcamStream = null;        // MediaStream from webcam
 function log(text) {
   var time = new Date();
 
-  console.log("[" + time.toTimeString() + "] " + text);
+  console.log("[" + time.toLocaleTimeString() + "] " + text);
 }
 
 // Output an error message to console.
@@ -73,7 +73,7 @@ function log(text) {
 function log_error(text) {
   var time = new Date();
 
-  console.trace("[" + time.toTimeString() + "] " + text);
+  console.trace("[" + time.toLocaleTimeString() + "] " + text);
 }
 
 // Send a JavaScript object by converting it to JSON and sending
@@ -134,8 +134,8 @@ function connect() {
     var msg = JSON.parse(evt.data);
     log("Message received: ");
     console.dir(msg);
-    var time = new Date(msg.date);
-    var timeStr = time.toTimeString();
+    var time = msg.date == undefined ? new Date() : new Date(msg.date);
+    var timeStr = time.toLocaleTimeString();
 
     switch(msg.type) {
       case "id":
