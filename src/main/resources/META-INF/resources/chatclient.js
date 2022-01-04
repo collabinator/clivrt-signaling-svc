@@ -19,6 +19,14 @@ if (!myHostname) {
 }
 log("Hostname: " + myHostname);
 
+// Get port
+
+var myPort = window.location.port;
+if (myPort) {
+  myPort = `:${myPort}`;
+}
+log("Port: " + myPort);
+
 // WebSocket chat/signaling channel variables.
 
 var connection = null;
@@ -57,7 +65,7 @@ var webcamStream = null;        // MediaStream from webcam
 function log(text) {
   var time = new Date();
 
-  console.log("[" + time.toLocaleTimeString() + "] " + text);
+  console.log("[" + time.toTimeString() + "] " + text);
 }
 
 // Output an error message to console.
@@ -65,7 +73,7 @@ function log(text) {
 function log_error(text) {
   var time = new Date();
 
-  console.trace("[" + time.toLocaleTimeString() + "] " + text);
+  console.trace("[" + time.toTimeString() + "] " + text);
 }
 
 // Send a JavaScript object by converting it to JSON and sending
@@ -105,7 +113,7 @@ function connect() {
   if (document.location.protocol === "https:") {
     scheme += "s";
   }
-  serverUrl = scheme + "://" + myHostname + ":8080/chat/" + document.getElementById("name").value;
+  serverUrl = scheme + "://" + myHostname + myPort + "/chat/" + document.getElementById("name").value;
 
   log(`Connecting to server: ${serverUrl}`);
   connection = new WebSocket(serverUrl);
@@ -127,7 +135,7 @@ function connect() {
     log("Message received: ");
     console.dir(msg);
     var time = new Date(msg.date);
-    var timeStr = time.toLocaleTimeString();
+    var timeStr = time.toTimeString();
 
     switch(msg.type) {
       case "id":
