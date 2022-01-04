@@ -7,18 +7,18 @@
 #
 # Then, build the image with:
 #
-# docker build -f src/main/docker/Dockerfile.jvm -t quarkus/signalling-jvm .
+# docker build -f src/main/docker/Dockerfile.jvm -t quarkus/clivrt-signaling-service-jvm .
 #
 # Then run the container using:
 #
-# docker run -i --rm -p 8080:8080 quarkus/signalling-jvm
+# docker run -i --rm -p 8080:8080 quarkus/clivrt-signaling-service-jvm
 #
 # If you want to include the debug port into your docker image
 # you will have to expose the debug port (default 5005) like this :  EXPOSE 8080 5005
 #
 # Then run the container using :
 #
-# docker run -i --rm -p 8080:8080 quarkus/signalling-jvm
+# docker run -i --rm -p 8080:8080 quarkus/clivrt-signaling-service-jvm
 #
 ###
 FROM registry.access.redhat.com/ubi8/openjdk-11-runtime:1.10
