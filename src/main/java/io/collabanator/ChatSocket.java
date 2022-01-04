@@ -1,5 +1,6 @@
 package io.collabanator;
 
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
@@ -16,6 +17,8 @@ import javax.websocket.server.ServerEndpoint;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import io.vertx.core.json.JsonObject;
+
 @ServerEndpoint("/chat/{username}")         
 @ApplicationScoped
 public class ChatSocket {
@@ -25,15 +28,10 @@ public class ChatSocket {
     @OnOpen
     public void onOpen(Session session, @PathParam("username") String username) {
         sessions.put(username, session);
-        Message message = new Message();
-        message.setType("userlist");
-        message.setUsers(sessions.keySet().stream().collect(Collectors.toList()));
-        try {
-            broadcast(new ObjectMapper().writeValueAsString(message));
-        } catch (JsonProcessingException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
-        }
+        JsonObject message = new JsonObject();
+        message.put("type", "userlist");
+        message.put("users", getUserList());
+        broadcast(message.encode());
     }
 
     @OnClose
@@ -49,27 +47,38 @@ public class ChatSocket {
     }
 
     @OnMessage
-    public void onBroadcast(String stringMessage, @PathParam("username") String username) {
-        if (stringMessage.equalsIgnoreCase("_ready_")) {
-            broadcast("User " + username + " joined");
+    public void onMessage(String incomingMessage, @PathParam("username") String username) {
+        JsonObject message = new JsonObject(incomingMessage);
+        message.put("name", username);
+
+        String outgoingMessage = message.encode();
+
+        if (message.getString("target") != null) {
+            sendPrivateMessage(message.getString("target"), outgoingMessage);
         } else {
-            try {
-                Message message = new ObjectMapper().readValue(stringMessage, Message.class);
-                message.setName(username);
-                broadcast(new ObjectMapper().writeValueAsString(message));
-            } catch (JsonProcessingException e) {
-                e.printStackTrace();
-            }  
+            broadcast(outgoingMessage);
         }
     }
 
-    private void broadcast(String message) {
-        sessions.values().forEach(s -> {
-            s.getAsyncRemote().sendObject(message, result ->  {
+    private void broadcast(Object message) {
+        sessions.values().forEach(session -> {
+            session.getAsyncRemote().sendObject(message, result ->  {
                 if (result.getException() != null) {
                     System.out.println("Unable to send message: " + result.getException());
                 }
             });
         });
+    }
+
+    private void sendPrivateMessage(String remoteUser, Object message) {
+        sessions.get(remoteUser).getAsyncRemote().sendObject(message, result ->  {
+            if (result.getException() != null) {
+                System.out.println("Unable to send message: " + result.getException());
+            }
+        });
+    }
+
+    private List<String> getUserList() {
+        return sessions.keySet().stream().collect(Collectors.toList());
     }
 }
