@@ -1,0 +1,117 @@
+apiVersion: 1.0.0
+metadata:
+  name: clivrt-signaling-svc
+projects:
+  - name: clivrt-signaling-svc
+    source:
+      location: 'https://github.com/collabinator/clivrt-signaling-svc.git'
+      type: git
+components:
+  - id: redhat/quarkus-java11/latest
+    type: chePlugin
+  - mountSources: true
+    endpoints:
+      - name: quarkus-development-server
+        port: 8080
+      - attributes:
+          path: /hello/greeting/che-user
+        name: hello-greeting-endpoint
+        port: 8080
+      - attributes:
+          public: 'false'
+        name: debug
+        port: 5005
+      - attributes:
+          public: 'false'
+        name: tests
+        port: 8081
+    memoryLimit: 512Mi
+    type: dockerimage
+    volumes:
+      - name: m2
+        containerPath: /home/jboss/.m2
+    alias: maven
+    image: 'registry.redhat.io/codeready-workspaces/plugin-java11-rhel8@sha256:f90e09397caa4dd5cd3476e495adfc0096272c0ba746a6e32215175c541ae058'
+    env:
+      - value: '-XX:MaxRAMPercentage=50.0 -XX:+UseParallelGC -XX:MinHeapFreeRatio=10 -XX:MaxHeapFreeRatio=20 -XX:GCTimeRatio=4 -XX:AdaptiveSizePolicyWeight=90 -Dsun.zip.disableMemoryMapping=true -Xms20m -Djava.security.egd=file:/dev/./urandom -Duser.home=/home/jboss'
+        name: JAVA_OPTS
+      - value: $(JAVA_OPTS)
+        name: MAVEN_OPTS
+commands:
+  - name: 1. Package the application
+    actions:
+      - workdir: '${CHE_PROJECTS_ROOT}/clivrt-signaling-svc'
+        type: exec
+        command: mvn package
+        component: maven
+  - name: 2. Start Quarkus in devmode (hot deploy + debug)
+    actions:
+      - workdir: '${CHE_PROJECTS_ROOT}/clivrt-signaling-svc'
+        type: exec
+        command: 'mvn compile quarkus:dev -Dquarkus.http.host=0.0.0.0 -Dquarkus.live-reload.instrumentation=false'
+        component: maven
+  - name: 3. Share this workspace
+    actions:
+      - workdir: '${CHE_PROJECTS_ROOT}/clivrt-signaling-svc'
+        type: exec
+        command: |
+          read -p "ENTER your OpenShift username: " OCP_USERNAME
+          read -p "ENTER your OpenShift password: " -s OCP_PASSWORD
+
+          echo
+
+          # Login to OpenShift with the provided credentials, and grab the token
+          oc login --insecure-skip-tls-verify=true -u $OCP_USERNAME -p $OCP_PASSWORD $KUBERNETES_SERVICE_HOST:$KUBERNETES_SERVICE_PORT
+          OCP_TOKEN=$(oc whoami -t)
+
+          echo
+
+          # Read username
+          read -p "ENTER the username of the person with whom you want to share this workspace: " OTHER_CRW_USER
+
+          echo
+
+          KEYCLOAK_URL=http://keycloak.openshift-workspaces.svc:8080
+
+          # Download jq to tmp folder
+          curl -L -s https://github.com/stedolan/jq/releases/download/jq-1.6/jq-linux64 -o /tmp/jq
+          chmod +x /tmp/jq
+
+          # Swap OCP Token for CRW Token
+          CRW_TOKEN=$(curl -X POST -s -d "client_id=codeready-public" --data-urlencode "grant_type=urn:ietf:params:oauth:grant-type:token-exchange" -d "subject_token=${OCP_TOKEN}" -d "subject_issuer=openshift-v4" --data-urlencode "subject_token_type=urn:ietf:params:oauth:token-type:access_token" ${KEYCLOAK_URL}/auth/realms/codeready/protocol/openid-connect/token | /tmp/jq -r .access_token)
+
+          # Get target user's GUID from their username
+          CHE_USER_ID=$(curl -s -H "Authorization: Bearer ${CRW_TOKEN}" "${CHE_API}/user/find?name=${OTHER_CRW_USER}" | /tmp/jq -r .id)
+
+          # Remove jq
+          rm -f /tmp/jq
+
+          # Grant read, use, and run permissions for this workspace for the indicated user
+          curl -X POST --header 'Content-Type: application/json' -H "Authorization: Bearer ${CRW_TOKEN}" -H 'Accept: text/html' -d '{
+            "actions": [
+              "read",
+              "use",
+              "run"
+            ],
+            "userId": "'$CHE_USER_ID'",
+            "domainId": "workspace",
+            "instanceId": "'$CHE_WORKSPACE_ID'"
+          }' "${CHE_API}/permissions" && \
+          echo "✅ Successfully shared workspace with user $OTHER_CRW_USER"
+        component: maven
+  - name: Attach remote debugger
+    actions:
+      - referenceContent: |
+          {
+            "version": "0.2.0",
+            "configurations": [
+              {
+                "type": "java",
+                "request": "attach",
+                "name": "Attach to Remote Quarkus App",
+                "hostName": "localhost",
+                "port": 5005
+              }
+            ]
+          }
+        type: vscode-launch
