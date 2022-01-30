@@ -3,7 +3,17 @@ Backend service that provides WebRTC signaling for connecting clients together. 
 * User registration and management
 * A basic chat feature whereby a user can send a message to all other connected users
 * Generic message handling for signaling and ICE negotiation to support a WebRTC session between two users
-## Getting started
+
+## Running this app
+There are many ways to run this Quarkus app, but likely you want it available on the internet so it is widely accessible. You have options but our typical way of running this is in [an OpenShift Developer Sandbox](https://developers.redhat.com/developer-sandbox/get-started). We are working on a deployment of a versioned container release but aren't quite polished enough yet. For now you have a few steps to follow:
+1. Download or clone this git repo locally
+2. oc login to your account
+3. edit the `resources/application.properties` to set the `quarkus.container-image.group` to your namespace
+4. run `mvnw clean package`
+
+It should do everything needed to create all the Kubernetes reqsources and deploy the app
+
+## Developers
 ### Running the application in dev mode
 You can run your application in dev mode that enables live coding using:
 ```shell script
@@ -58,6 +68,7 @@ This repository is currently private, so in order to import it with CodeReady Wo
     EOF
     ```
 3. Create a new workspace using the `devfile.yaml` in this repository.
+
 ## Message Schema
 The server expects most messages to take the form of a JSON object, giving particular regard to the following attributes:
 * **type**: the message type. Supported values:
