@@ -14,8 +14,24 @@ There are many ways to run this Quarkus app, but likely you want it available on
 It should do everything needed to create all the Kubernetes reqsources and deploy the app
 
 ## Developers
-### Running the application in dev mode
-You can run your application in dev mode that enables live coding using:
+Below are 2 options for developing on this app: 
+1) via a web IDE called Code Ready Workspaces
+2) locally on a machine with the JDK, Quarkus, wscat, and other dev tools installed.
+
+### Option 1 - Setting up a development environment in CodeReady Workspaces (CRW)
+1. Login your CRW and navigate to the "Create Workspace" page
+2. Paste this repo's URL into the text box
+3. Click "Create & Open"
+
+Note: this works because the repo has a [devfile.yaml](https://devfile.io/docs/devfile/2.1.0/user-guide/index.html) which has instructions for config and running our development environment.
+
+![Screenshot](docs/CRW-createscreen.png?raw=true)
+
+
+### Option 2 - Running the application locally in dev mode
+Alternatively, and doing a bit more work, you can run your application locally in dev mode.
+
+Exec the quarkus command that enables [live coding](https://quarkus.io/vision/developer-joy) using:
 ```shell script
 ./mvnw quarkus:dev
 ``` 
@@ -36,38 +52,6 @@ Once you're connected, send a message to chat using JSON, like this:
 ```shell script
 {"type":"message", "text":"This is a test message"}
 ```
-
-### Setting up a development environment in CodeReady Workspaces
-This repository is currently private, so in order to import it with CodeReady Workspaces, you'll need to create a credential secret.
-1. Set variables for your github username and a [personal access token](https://github.com/settings/tokens) with full **repo** permissions.
-    ```bash
-    GITHUB_USERNAME=andykrohg
-    GITHUB_TOKEN=ghp_000000000000000000000
-    ```
-2. Switch to (or create) the namespace where your workspaces will be provisioned, which by default is `${username}-codeready`. For example:
-    ```bash
-    oc project user1-codeready
-    ```
-2. Create a secret to hold your git credentials. The annotations will inform the CodeReady Server that it needs to mount the secret into your workspace once it's created.
-    ```bash
-    oc apply -f - << EOF
-    apiVersion: v1
-    kind: Secret
-    metadata:
-        name: git-credentials-secret
-        labels:
-            app.kubernetes.io/part-of: che.eclipse.org
-            app.kubernetes.io/component: workspace-secret
-        annotations:
-            che.eclipse.org/automount-workspace-secret: 'true'
-            che.eclipse.org/mount-path: /home/theia/.git-credentials
-            che.eclipse.org/mount-as: file
-            che.eclipse.org/git-credential: 'true'
-    stringData:
-        credentials: https://$GITHUB_USERNAME:$GITHUB_TOKEN@github.com
-    EOF
-    ```
-3. Create a new workspace using the `devfile.yaml` in this repository.
 
 ## Message Schema
 The server expects most messages to take the form of a JSON object, giving particular regard to the following attributes:
